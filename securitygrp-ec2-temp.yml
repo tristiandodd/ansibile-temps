@@ -1,0 +1,45 @@
+- hosts: localhost
+#Be sure to change the name, region, and rules if need be.
+  task:
+    - name: Setting up Security & Firewall Group
+      ec2_group: #Module for ansible to create and EC2 security group
+        name: <Security Group Name>
+        description: Rules allowing traffic only on port 80 & 22
+        region: <region>
+        rules:
+          - proto: tcp #Protocol to use
+            from_port: 80    #Allows traffic to and from port 80 from anywhere.
+            to_port: 80
+            cidr_ip: 0.0.0.0/0 
+          - proto: tcp
+            from_port: 22     #Allows traffic to and from port 22 from anywhere.
+            to_port_22: 22
+            cidr_ip: 0.0.0.0/0
+#List of firewall outbound rules to enforce in this group (see example). 
+#If none are supplied, a default all-out rule is assumed.
+#If an empty list is supplied, no outbound rules will be enabled.
+        rules_egress: 
+          - proto: all            
+            cidr_ip: 0.0.0.0/0
+#EC2 configuration and settings 
+#Be sure to change things as needed. Name, keyPair, instance type, image and such...
+    - name: 
+      ec2: #Module for ansible to create the ec2 instance(s)
+        key_name: <Key pair name>
+        region: <region>
+        instance_type: t2.micro
+        image: ami-775e4f16 #RedHat Linux instance, be sure the instance numbers match.
+        wait: yes
+        wait_timeout: 500
+        count: 1 # Number of instances you want to create
+        instance_tags: #Same tags when you create tags through the aws console.
+          Name: AWS_Instance
+          Owner: <Your Name>
+        monitoring: no #Setup Monitoring
+        vpc_subnet_id: <Vpc_subnet_id>
+        assign_public_ip: yes
+        group: <Security group name you created earlier>
+      register: ec2_out #This saves outputs form the instance in an ec2_out variable
+    - name: Wait for SSH to come up
+      wait_for: host={{item.public_dns_name}} port=22 delay=60 timeout=320 state=started
+      with_items: '{{ec2_out.instances}}'

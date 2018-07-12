@@ -1,0 +1,26 @@
+
+#Template guidline for aws and ansible spinning up an ec2 instance
+
+- name: create Instance
+  host: localhost
+	gather_facts: False
+	vars:
+	  keypair: # Key pair type here
+		instance_type: t2.micro #Free Tier instance
+		image: ami-d1315fb1 # Grab an image ami # for the instance you want to use. 
+		region: us-east-1
+  tasks:
+	  - name: Launch instance
+		  ec2:
+			  key_name: "{ {keypair }}"
+				group: default
+				instance_type: "{{ instance_type }]"
+				image: "{{ image }}"
+				wait: true
+				region:
+				aws_access_key: # Put your access key here
+				aws_secret_key: #Put your secret key here
+		 register: ec2
+	 - name: Print all ec2 variables
+	   debug: var=ec2
+
